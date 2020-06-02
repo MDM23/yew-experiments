@@ -1,0 +1,8 @@
+* text=auto
+
+*.md eol=lf
+*.rs eol=lf
+
+.editorconfig eol=lf
+.gitattributes eol=lf
+.gitignore eol=lf
