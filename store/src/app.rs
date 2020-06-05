@@ -1,24 +1,15 @@
-use std::cell::RefCell;
-use std::rc::Rc;
+use super::state::{Input, ReadOnly, State};
+use crate::reduce;
 use yew::prelude::*;
-
-pub struct State {
-    payload: String,
-}
-
-impl Default for State {
-    fn default() -> Self {
-        Self {
-            payload: String::from("Test"),
-        }
-    }
-}
-
-pub type StateRef = Rc<RefCell<State>>;
 
 pub struct App {
     link: ComponentLink<Self>,
-    state: StateRef,
+    state: ReadOnly<State>,
+}
+
+#[derive(Properties, Clone)]
+pub struct Props {
+    pub state: ReadOnly<State>,
 }
 
 pub enum Msg {
@@ -27,12 +18,12 @@ pub enum Msg {
 
 impl Component for App {
     type Message = Msg;
-    type Properties = ();
+    type Properties = Props;
 
-    fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
+    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
         App {
             link,
-            state: Rc::new(RefCell::new(State::default())),
+            state: props.state,
         }
     }
 
@@ -42,7 +33,7 @@ impl Component for App {
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
-            Msg::UpdatePayload(p) => self.state.borrow_mut().payload = p,
+            Msg::UpdatePayload(p) => reduce!(Input::SetText(p)),
         }
         true
     }
@@ -53,22 +44,22 @@ impl Component for App {
             .callback(|e: InputData| Msg::UpdatePayload(e.value));
         html! {
             <>
-                <input oninput=oninput value=self.state.borrow().payload />
-                <Sub state=self.state.clone() />
-                <Sub state=self.state.clone() />
-                <Sub state=self.state.clone() />
+                <input oninput=oninput value=self.state.borrow().text.clone() />
+                <Sub text=self.state.borrow().text.clone() />
+                <Sub text=self.state.borrow().text.clone() />
+                <Sub text=self.state.borrow().text.clone() />
             </>
         }
     }
 }
 
 pub struct Sub {
-    payload: String,
+    text: String,
 }
 
 #[derive(Clone, Properties)]
 pub struct SubProps {
-    state: StateRef,
+    text: String,
 }
 
 impl Component for Sub {
@@ -76,18 +67,12 @@ impl Component for Sub {
     type Properties = SubProps;
 
     fn create(props: Self::Properties, _: ComponentLink<Self>) -> Self {
-        Self {
-            payload: props.state.borrow().payload.clone(),
-        }
+        Self { text: props.text }
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        if props.state.borrow().payload != self.payload {
-            self.payload = props.state.borrow().payload.clone();
-            true
-        } else {
-            false
-        }
+        self.text = props.text;
+        true
     }
 
     fn update(&mut self, _: Self::Message) -> ShouldRender {
@@ -96,7 +81,7 @@ impl Component for Sub {
 
     fn view(&self) -> Html {
         html! {
-            <div>{ format!("State value = {}", self.payload) }</div>
+            <div>{ format!("State value = {}", self.text) }</div>
         }
     }
 }
