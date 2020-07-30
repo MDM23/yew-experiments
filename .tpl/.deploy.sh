@@ -49,13 +49,8 @@ cat <<- EOF > ./$1/index.html
 </head>
 <body>
     <script type="module">
-
-        import init from "./$1.js";
-
-        (async function run() {
-            await init();
-        })();
-
+        import init from "./pkg/$1.js";
+        (async () => await init())();
     </script>
 </body>
 </html>

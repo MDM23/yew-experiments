@@ -87,6 +87,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "212d0f5754cb6769937f4501cc0e67f4f4483c8d2c3e1e922ee9edbe4ab4c7c0"
 
 [[package]]
+name = "drag-hook"
+version = "0.0.1"
+dependencies = [
+ "gloo",
+ "js-sys",
+ "log",
+ "wasm-bindgen",
+ "web-sys",
+ "web_logger",
+ "yew 0.17.2",
+ "yew-functional",
+]
+
+[[package]]
 name = "fnv"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -493,7 +507,7 @@ dependencies = [
  "wasm-bindgen",
  "web-sys",
  "web_logger",
- "yew",
+ "yew 0.16.2",
 ]
 
 [[package]]
@@ -648,7 +662,46 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
- "yew-macro",
+ "yew-macro 0.16.1",
+]
+
+[[package]]
+name = "yew"
+version = "0.17.2"
+source = "git+https://github.com/yewstack/yew#fde3d4c20dfc65c12a7c03bf0046ec6c09a2fa02"
+dependencies = [
+ "anyhow",
+ "anymap",
+ "bincode",
+ "cfg-if",
+ "cfg-match",
+ "console_error_panic_hook",
+ "futures",
+ "gloo",
+ "http",
+ "indexmap",
+ "js-sys",
+ "log",
+ "proc-macro-hack",
+ "proc-macro-nested",
+ "ryu",
+ "serde",
+ "serde_json",
+ "slab",
+ "thiserror",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "yew-macro 0.17.0",
+]
+
+[[package]]
+name = "yew-functional"
+version = "0.13.0"
+source = "git+https://github.com/yewstack/yew#fde3d4c20dfc65c12a7c03bf0046ec6c09a2fa02"
+dependencies = [
+ "wasm-bindgen",
+ "yew 0.17.2",
 ]
 
 [[package]]
@@ -656,6 +709,19 @@ name = "yew-macro"
 version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f1d2fe46d7922ecd99af4e5b4eddcab58c70ec741e31de6e1b910d5873a3095f"
+dependencies = [
+ "boolinator",
+ "lazy_static",
+ "proc-macro-hack",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "yew-macro"
+version = "0.17.0"
+source = "git+https://github.com/yewstack/yew#fde3d4c20dfc65c12a7c03bf0046ec6c09a2fa02"
 dependencies = [
  "boolinator",
  "lazy_static",
