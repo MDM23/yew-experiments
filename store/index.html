@@ -8,13 +8,8 @@
 </head>
 <body>
     <script type="module">
-
-        import init from "./store.js";
-
-        (async function run() {
-            await init();
-        })();
-
+        import init from "./pkg/store.js";
+        (async () => await init())();
     </script>
 </body>
 </html>

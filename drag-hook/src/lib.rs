@@ -2,7 +2,7 @@
 
 mod hooks;
 
-use hooks::use_drag;
+use hooks::{use_drag, use_drag_with_options, DragHookOptions};
 use wasm_bindgen::prelude::*;
 use yew::prelude::*;
 use yew_functional::{FunctionComponent, FunctionProvider};
@@ -20,8 +20,12 @@ impl FunctionProvider for App {
     type TProps = ();
 
     fn run(_: &Self::TProps) -> Html {
-        let (coords_a, node_a) = use_drag(Callback::noop());
-        let (coords_b, node_b) = use_drag(Callback::noop());
+        let (coords_a, node_a) = use_drag_with_options(DragHookOptions {
+            event_callback: Callback::noop(),
+            reset_on_drop: true,
+        });
+
+        let (coords_b, node_b) = use_drag();
 
         html! {
             <main>

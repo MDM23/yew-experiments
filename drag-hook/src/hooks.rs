@@ -54,7 +54,26 @@ pub enum DragAction {
     Dropped,
 }
 
-pub fn use_drag(callback: Callback<DragAction>) -> (Rc<Coordinates>, Rc<RefCell<NodeRef>>) {
+#[derive(Clone)]
+pub struct DragHookOptions {
+    pub event_callback: Callback<DragAction>,
+    pub reset_on_drop: bool,
+}
+
+impl Default for DragHookOptions {
+    fn default() -> Self {
+        Self {
+            event_callback: Callback::noop(),
+            reset_on_drop: false,
+        }
+    }
+}
+
+pub fn use_drag() -> (Rc<Coordinates>, Rc<RefCell<NodeRef>>) {
+    use_drag_with_options(Default::default())
+}
+
+pub fn use_drag_with_options(options: DragHookOptions) -> (Rc<Coordinates>, Rc<RefCell<NodeRef>>) {
     #[derive(Default)]
     struct UseDragState {
         listeners: ListenerRef,
@@ -66,11 +85,19 @@ pub fn use_drag(callback: Callback<DragAction>) -> (Rc<Coordinates>, Rc<RefCell<
         }
     }
 
+    enum Action {
+        Translate(Coordinates),
+        Reset,
+    }
+
     let node = use_ref(|| NodeRef::default());
     let node_c = node.clone();
 
-    let (coords, move_by) = use_reducer(
-        |prev: Rc<Coordinates>, delta: Coordinates| Coordinates(prev.0 + delta.0, prev.1 + delta.1),
+    let (coords, reduce) = use_reducer(
+        |prev: Rc<Coordinates>, action: Action| match action {
+            Action::Translate(delta) => Coordinates(prev.0 + delta.0, prev.1 + delta.1),
+            Action::Reset => Coordinates(0, 0),
+        },
         Coordinates(0, 0),
     );
 
@@ -89,7 +116,9 @@ pub fn use_drag(callback: Callback<DragAction>) -> (Rc<Coordinates>, Rc<RefCell<
                                 EventListenerOptions::enable_prevent_default(),
                                 move |e: &Event| {
                                     e.prevent_default();
-                                    callback.emit(DragAction::Dragged(element_c.clone()));
+                                    options
+                                        .event_callback
+                                        .emit(DragAction::Dragged(element_c.clone()));
 
                                     let body = &web_sys::window()
                                         .unwrap()
@@ -99,24 +128,36 @@ pub fn use_drag(callback: Callback<DragAction>) -> (Rc<Coordinates>, Rc<RefCell<
                                         .unwrap();
 
                                     let l1 = listeners.clone();
-                                    let cb1 = callback.clone();
+                                    let r1 = reduce.clone();
+                                    let op1 = options.clone();
                                     listeners.set_mouseup(EventListener::once(
                                         &body,
                                         "mouseup",
                                         move |_| {
                                             l1.drag_stop();
-                                            cb1.emit(DragAction::Dropped);
+
+                                            if op1.reset_on_drop {
+                                                r1(Action::Reset);
+                                            }
+
+                                            op1.event_callback.emit(DragAction::Dropped);
                                         },
                                     ));
 
                                     let l2 = listeners.clone();
-                                    let cb2 = callback.clone();
+                                    let r2 = reduce.clone();
+                                    let op2 = options.clone();
                                     listeners.set_mouseleave(EventListener::once(
                                         &body,
                                         "mouseleave",
                                         move |_| {
                                             l2.drag_stop();
-                                            cb2.emit(DragAction::Dropped);
+
+                                            if op2.reset_on_drop {
+                                                r2(Action::Reset);
+                                            }
+
+                                            op2.event_callback.emit(DragAction::Dropped);
                                         },
                                     ));
 
@@ -125,7 +166,7 @@ pub fn use_drag(callback: Callback<DragAction>) -> (Rc<Coordinates>, Rc<RefCell<
                                         .map(|m: &MouseEvent| (m.client_x(), m.client_y()))
                                         .unwrap();
 
-                                    let m = move_by.clone();
+                                    let reduce = reduce.clone();
 
                                     listeners.set_mousemove(EventListener::new(
                                         &body,
@@ -136,10 +177,10 @@ pub fn use_drag(callback: Callback<DragAction>) -> (Rc<Coordinates>, Rc<RefCell<
                                                 .map(|m: &MouseEvent| (m.client_x(), m.client_y()))
                                                 .unwrap();
 
-                                            m(Coordinates(
+                                            reduce(Action::Translate(Coordinates(
                                                 new_coords.0 - last_coords.0,
                                                 new_coords.1 - last_coords.1,
-                                            ));
+                                            )));
 
                                             last_coords = new_coords;
                                         },

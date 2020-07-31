@@ -4,22 +4,16 @@ RUST_PACKAGE := $(shell basename $(CURDIR))
 
 .PHONY: dev
 dev:
-	$(MAKE) -j2 serve build
+	$(MAKE) -j2 watch serve
 
-.PHONY: serve
-serve:
-	basic-http-server ../target/web/$(RUST_PROFILE)/$(RUST_PACKAGE)
+.PHONY: watch
+watch:
+	cargo watch -i "pkg/*" -s "make build"
 
 .PHONY: build
 build:
-	cargo watch -x 'build --target $(RUST_TARGET)' -s '$(MAKE) wasm'
+	wasm-pack build --debug --no-typescript --target=web --out-name=$(RUST_PACKAGE)
 
-.PHONY: wasm
-wasm:
-	wasm-bindgen \
-		--target web \
-		--no-typescript \
-		--out-dir ../target/web/$(RUST_PROFILE)/$(RUST_PACKAGE) \
-		--out-name $(RUST_PACKAGE) \
-		../target/$(RUST_TARGET)/$(RUST_PROFILE)/$(RUST_PACKAGE).wasm
-	cp -f index.html ../target/web/$(RUST_PROFILE)/$(RUST_PACKAGE)/
+.PHONY: serve
+serve:
+	basic-http-server .
