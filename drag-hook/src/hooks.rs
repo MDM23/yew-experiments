@@ -3,11 +3,12 @@ use std::{cell::RefCell, rc::Rc};
 use wasm_bindgen::JsCast;
 use web_sys::{Event, HtmlElement, MouseEvent};
 use yew::{Callback, NodeRef};
-use yew_functional::{use_hook, use_reducer, Hook};
+use yew_functional::{use_hook, use_reducer, use_ref, Hook};
 
+type Shared<T> = Rc<RefCell<T>>;
 pub struct Coordinates(pub i32, pub i32);
 
-#[derive(Debug)]
+#[derive(Default)]
 struct DragListeners {
     dragstart: Option<EventListener>,
     mouseup: Option<EventListener>,
@@ -15,24 +16,8 @@ struct DragListeners {
     mousemove: Option<EventListener>,
 }
 
-struct ListenerRef(Rc<RefCell<DragListeners>>);
-
-impl Default for ListenerRef {
-    fn default() -> Self {
-        Self(Rc::new(RefCell::new(DragListeners {
-            dragstart: None,
-            mouseup: None,
-            mouseleave: None,
-            mousemove: None,
-        })))
-    }
-}
-
-impl Clone for ListenerRef {
-    fn clone(&self) -> Self {
-        Self(self.0.clone())
-    }
-}
+#[derive(Clone, Default)]
+struct ListenerRef(Shared<DragListeners>);
 
 impl ListenerRef {
     pub fn set_dragstart(&self, l: EventListener) {
@@ -64,17 +49,13 @@ impl ListenerRef {
     }
 }
 
-#[derive(Debug)]
 pub enum DragAction {
-    Dragging(HtmlElement),
+    Dragged(HtmlElement),
     Dropped,
 }
 
-pub fn use_drag(
-    trigger: NodeRef,
-    callback: Callback<DragAction>,
-    initial: Coordinates,
-) -> Rc<Coordinates> {
+pub fn use_drag(callback: Callback<DragAction>) -> (Rc<Coordinates>, Rc<RefCell<NodeRef>>) {
+    #[derive(Default)]
     struct UseDragState {
         listeners: ListenerRef,
     }
@@ -85,17 +66,19 @@ pub fn use_drag(
         }
     }
 
+    let node = use_ref(|| NodeRef::default());
+    let node_c = node.clone();
+
     let (coords, move_by) = use_reducer(
         |prev: Rc<Coordinates>, delta: Coordinates| Coordinates(prev.0 + delta.0, prev.1 + delta.1),
-        initial,
+        Coordinates(0, 0),
     );
 
     use_hook(
         move |_state: &mut UseDragState, hook_callback| {
             hook_callback(
                 move |state: &mut UseDragState| {
-                    if let Some(element) = trigger.cast::<HtmlElement>() {
-                        element.set_draggable(true);
+                    if let Some(element) = node_c.borrow().cast::<HtmlElement>() {
                         let listeners = state.listeners.clone();
                         let element_c = element.clone();
                         state
@@ -106,7 +89,7 @@ pub fn use_drag(
                                 EventListenerOptions::enable_prevent_default(),
                                 move |e: &Event| {
                                     e.prevent_default();
-                                    callback.emit(DragAction::Dragging(element_c.clone()));
+                                    callback.emit(DragAction::Dragged(element_c.clone()));
 
                                     let body = &web_sys::window()
                                         .unwrap()
@@ -170,10 +153,8 @@ pub fn use_drag(
                 true,
             );
         },
-        || UseDragState {
-            listeners: Default::default(),
-        },
+        || Default::default(),
     );
 
-    coords
+    (coords, node)
 }

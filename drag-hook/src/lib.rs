@@ -2,10 +2,10 @@
 
 mod hooks;
 
-use hooks::{use_drag, Coordinates};
+use hooks::use_drag;
 use wasm_bindgen::prelude::*;
 use yew::prelude::*;
-use yew_functional::{use_ref, FunctionComponent, FunctionProvider};
+use yew_functional::{FunctionComponent, FunctionProvider};
 
 #[wasm_bindgen(start)]
 pub fn wasm_main() -> Result<(), JsValue> {
@@ -20,20 +20,22 @@ impl FunctionProvider for App {
     type TProps = ();
 
     fn run(_: &Self::TProps) -> Html {
-        let node_ref = use_ref(|| NodeRef::default());
-
-        let coords = use_drag(
-            node_ref.borrow().clone(),
-            Callback::noop(),
-            Coordinates(50, 50),
-        );
+        let (coords_a, node_a) = use_drag(Callback::noop());
+        let (coords_b, node_b) = use_drag(Callback::noop());
 
         html! {
             <main>
                 <div
-                    ref=(*node_ref).borrow().clone()
-                    style={format!("left: {}px; top: {}px;", coords.0, coords.1)}
+                    ref=(*node_a).borrow().clone()
+                    style={format!("left: {}px; top: {}px;", coords_a.0, coords_a.1)}
                     class="circle absolute"
+                    draggable="true"
+                />
+                <div
+                    ref=(*node_b).borrow().clone()
+                    style={format!("left: {}px; top: {}px;", coords_b.0, coords_b.1)}
+                    class="circle absolute"
+                    draggable="true"
                 />
             </main>
         }
